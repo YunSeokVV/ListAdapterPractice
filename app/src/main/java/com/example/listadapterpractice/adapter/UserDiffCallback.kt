@@ -21,8 +21,8 @@ class UserDiffCallback(private val oldUserList : List<User>, private val newUser
     }
 
     override fun areItemsTheSame(oldItemPosition: Int, newItemPosition: Int): Boolean {
-        Logger.v((oldUserList.get(oldItemPosition).idx == newUserList.get(newItemPosition).idx).toString())
-        return oldUserList.get(oldItemPosition).idx == newUserList.get(newItemPosition).idx
+        Logger.v((oldUserList.get(oldItemPosition).name == newUserList.get(newItemPosition).name).toString())
+        return oldUserList.get(oldItemPosition).name == newUserList.get(newItemPosition).name
     }
 
     override fun areContentsTheSame(oldItemPosition: Int, newItemPosition: Int): Boolean {

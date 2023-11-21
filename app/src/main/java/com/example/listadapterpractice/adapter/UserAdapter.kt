@@ -65,8 +65,8 @@ class UserAdapter(private val itemClickListener: ItemClickListener) :
                 // User properties may have changed if reloaded from the DB, but ID is fixed.
                 //추가적으로 좀 검색을해서 찾아보니까 여기서 말하는 getId() 가 DB에서 식별이 가능한 PK 값 같은 것을 의미한다고 한다.
                 // return oldItem.getId() == newItem.getId()
-                Logger.v("areItemTheSame : ${oldItem.idx == newItem.idx}")
-                return oldItem.idx == newItem.idx
+                Logger.v("areItemTheSame : ${oldItem.name == newItem.name}")
+                return oldItem.name == newItem.name
             }
 
             //todo : 애초에 oldItem 이랑 newItem 객체가 같은 시점부터 답이 없다. 뭔짓을 해도 true를 반환할거 아닌가.
