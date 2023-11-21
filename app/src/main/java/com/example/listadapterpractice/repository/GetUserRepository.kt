@@ -6,6 +6,7 @@ import com.example.listadapterpractice.model.User
 
 interface GetUserRepository {
     fun getUser() : LiveData<List<User>>
+    suspend fun getUserList() : List<User>
 }
 
 class GetUserRepositoryImpl(private val getUserDataSource : GetUserDataSource) : GetUserRepository{
@@ -14,4 +15,7 @@ class GetUserRepositoryImpl(private val getUserDataSource : GetUserDataSource) :
         return getUserDataSource.getUser()
     }
 
+    override suspend fun getUserList(): List<User> {
+        return getUserDataSource.getUserList()
+    }
 }

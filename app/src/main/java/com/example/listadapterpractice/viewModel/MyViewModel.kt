@@ -16,37 +16,41 @@ internal class MyViewModel(
     private val getUserRepository: GetUserRepository,
     private val updateUserRepository: UpdateUserRepository
 ) : ViewModel() {
-    private val _userList: LiveData<List<User>>
-    val usersList: LiveData<List<User>>
+    private val _userList2: MutableLiveData<List<User>> = MutableLiveData<List<User>>()
+    val usersList2: LiveData<List<User>>
         get() {
-            return _userList
+            return _userList2
         }
 
-    init {
-        _userList = getUserRepository.getUser()
-    }
+    val usersList: LiveData<List<User>>
+        get() {
+            return getUserRepository.getUser()
+        }
+
 
     // todo : 이 방식이 제대로된 subMitList를 쓰는 방법인 것 같다.
     fun update(pos: Int, user: User) {
-        val newList = mutableListOf<User>()
-        _userList.value?.let {
-            newList.addAll(it)
-        }
-        newList.set(pos, user)
+//        val newList = mutableListOf<User>()
+//        _userList.value?.let {
+//            newList.addAll(it)
+//        }
+//        newList.set(pos, user)
         //_userList.value = newList
     }
-
-    var clickedPosition : Int = 0
-
 
     fun insertUser(userName: String) = viewModelScope.launch {
         val user = User(userName)
         insertUserRepository.insertUser(user)
+        viewModelScope.launch {
+            _userList2.value = getUserRepository.getUserList().shuffled()
+        }
     }
 
     fun updateUser(userName: String, user: User) = viewModelScope.launch {
-        user.name = userName
         updateUserRepository.updateUser(user)
+        viewModelScope.launch {
+            _userList2.value = getUserRepository.getUserList().shuffled()
+        }
     }
 
 }
