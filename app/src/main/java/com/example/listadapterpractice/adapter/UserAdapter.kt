@@ -45,7 +45,7 @@ class UserAdapter(private val itemClickListener: ItemClickListener) :
 //    }
 
     inner class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
-        val userName: TextView = itemView.findViewById(R.id.userName)
+        private val userName: TextView = itemView.findViewById(R.id.userName)
         fun bind(user: User) {
             userName.text = user.name
         }
@@ -66,7 +66,7 @@ class UserAdapter(private val itemClickListener: ItemClickListener) :
                 //추가적으로 좀 검색을해서 찾아보니까 여기서 말하는 getId() 가 DB에서 식별이 가능한 PK 값 같은 것을 의미한다고 한다.
                 // return oldItem.getId() == newItem.getId()
                 Logger.v("areItemTheSame : ${oldItem.idx == newItem.idx}")
-                return oldItem.idx == newItem.idx
+                return oldItem == newItem
             }
 
             //todo : 애초에 oldItem 이랑 newItem 객체가 같은 시점부터 답이 없다. 뭔짓을 해도 true를 반환할거 아닌가.
@@ -79,7 +79,7 @@ class UserAdapter(private val itemClickListener: ItemClickListener) :
                 // NOTE: if you use equals, your object must properly override Object#equals()
                 // Incorrectly returning false here will result in too many animations.
                 // 동등성 비교를 해야한다. 객체안의 서로 내용이 같은지를 비교해야함.
-                return oldItem == newItem
+                return true
             }
 
         }

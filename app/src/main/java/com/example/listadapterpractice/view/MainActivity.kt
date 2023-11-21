@@ -42,7 +42,6 @@ class MainActivity : AppCompatActivity() {
                 val editBtn = dialogView.findViewById<Button>(R.id.editBtn)
                 editBtn.setOnClickListener{
                     viewModel.updateUser(userName.text.toString(), user)
-                    viewModel.clickedPosition = position
                     alertDialog.dismiss()
                 }
                 alertDialog.show()
@@ -96,7 +95,7 @@ class MainActivity : AppCompatActivity() {
             )
         }
 
-        viewModel.usersList.observe(this, Observer<List<User>> { data ->
+        viewModel.usersList.observe(this) { data ->
 
             //해결법1
 //            val copied = data?.toMutableList()
@@ -109,9 +108,13 @@ class MainActivity : AppCompatActivity() {
 //            adapter.currentList.clear()
 //            adapter.currentList.addAll(data)
 
-            adapter.submitList(data)
-            adapter.notifyItemChanged(viewModel.clickedPosition)
-        })
+//            adapter.submitList(data) {
+//                adapter.notifyDataSetChanged()
+//            }
+        }
 
+        viewModel.usersList2.observe(this) {
+            adapter.submitList(it)
+        }
     }
 }
