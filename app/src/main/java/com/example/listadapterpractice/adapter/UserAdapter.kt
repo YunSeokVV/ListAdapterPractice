@@ -1,6 +1,5 @@
 package com.example.listadapterpractice.adapter
 
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -10,7 +9,6 @@ import android.widget.TextView
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
-import androidx.recyclerview.widget.RecyclerView.ViewHolder
 import com.example.listadapterpractice.R
 import com.example.listadapterpractice.model.User
 import com.orhanobut.logger.Logger
@@ -22,7 +20,11 @@ class UserAdapter(
 ) :
     ListAdapter<User, RecyclerView.ViewHolder>(diffUtil) {
     override fun getItemViewType(position: Int): Int {
-        return currentList.get(position).viewType
+        if (currentList.get(position).viewType == ViewType.SEARCH) {
+            return ViewType.SEARCH
+        } else {
+            return ViewType.SEARCH_RESULT
+        }
     }
 
     //todo : 반드시 이 메소드를 오버라이드 해야하는지 확인해보기
@@ -40,7 +42,6 @@ class UserAdapter(
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
         LayoutInflater.from(parent.context)
-
         if (viewType == ViewType.SEARCH) {
             val itemView =
                 LayoutInflater.from(parent.context).inflate(R.layout.search_user, parent, false)
@@ -96,7 +97,7 @@ class UserAdapter(
                 // User properties may have changed if reloaded from the DB, but ID is fixed.
                 //추가적으로 좀 검색을해서 찾아보니까 여기서 말하는 getId() 가 DB에서 식별이 가능한 PK 값 같은 것을 의미한다고 한다.
                 // return oldItem.getId() == newItem.getId()
-                Logger.v("areItemTheSame : ${oldItem.name == newItem.name}")
+                //Logger.v("areItemTheSame : ${oldItem.name == newItem.name}")
                 return oldItem.name == newItem.name
             }
 
@@ -104,8 +105,8 @@ class UserAdapter(
             override fun areContentsTheSame(oldItem: User, newItem: User): Boolean {
 
                 // 아래 로그가 서로 같은 시점부터 걍 망한거다.
-                Logger.v(oldItem.hashCode().toString())
-                Logger.v(newItem.hashCode().toString())
+//                Logger.v(oldItem.hashCode().toString())
+//                Logger.v(newItem.hashCode().toString())
 
                 // NOTE: if you use equals, your object must properly override Object#equals()
                 // Incorrectly returning false here will result in too many animations.

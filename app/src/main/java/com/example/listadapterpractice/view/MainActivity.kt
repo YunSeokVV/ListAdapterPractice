@@ -38,11 +38,15 @@ class MainActivity : AppCompatActivity() {
 
                 val userName = dialogView.findViewById<EditText>(R.id.userName)
                 userName.hint = user.name
-
                 val editBtn = dialogView.findViewById<Button>(R.id.editBtn)
+
                 editBtn.setOnClickListener {
-                    viewModel.updateUser(user)
-                    //viewModel.clickedPosition = position
+                    Logger.v(userName.text.toString())
+                    Logger.v(userName.hint.toString())
+
+                    // todo : 제대로 동작하지 않던 업데이트 기능이(submitList를 해줘도 안됐음) 지금은 된다. 아마 짐작하건데 아래 코드를 통해서 깊은 복사가 된 것 같은데 멘토님께 질문해보자.
+                    val updateUser = User(userName.text.toString(),user.viewType, user.idx)
+                    viewModel.updateUser(updateUser)
                     alertDialog.dismiss()
                 }
                 alertDialog.show()
@@ -51,7 +55,8 @@ class MainActivity : AppCompatActivity() {
             object : UserAdapter.SearchBtnListener {
                 override fun itemSearch(userName: String) {
                     lifecycleScope.launch {
-                        adapter.submitList(viewModel.getUser(userName))
+                        viewModel.setSearchUser(adapter,userName)
+                        //adapter.submitList(viewModel.getUser(userName))
                     }
                 }
             })
@@ -96,27 +101,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         viewModel.usersList.observe(this, Observer<List<User>> { data ->
-            Logger.v("viewModel observer Called")
-            //해결법1
-//            val copied = data?.toMutableList()
-//            UserAdapter.afterItem = copied!!.get(0)
-//            Logger.v("check this "+(data === copied).toString())
-//            //todo : 핵심은 깊은복사를 해야한다는 점이다. 현재는 얕은복사이기 때문에 안된다. 여기서 값을 잘 넘겨줘야지 areContentsTheSame에서 false가 반환될 것이다.
-//            adapter.submitList(copied)
-
-            //해결법2 (나쁜 방법)
-//            adapter.currentList.clear()
-//            adapter.currentList.addAll(data)
-
-
-            //adapter.notifyItemChanged(viewModel.clickedPosition)
             adapter.submitList(viewModel.searchUserUI(data))
-
-            Logger.v(adapter.currentList.size.toString())
-
-            //adapter.submitList(data)
         })
-
-
     }
 }
