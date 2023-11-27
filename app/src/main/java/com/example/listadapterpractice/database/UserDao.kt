@@ -12,7 +12,9 @@ import com.example.listadapterpractice.model.User
 @Dao
 interface UserDao {
     @Query("SELECT * FROM User")
-    fun getUser(): LiveData<List<User>>
+    fun getAllUser(): LiveData<List<User>>
+    @Query("SELECT * FROM User WHERE name == :name")
+    suspend fun getUser(name : String): List<User>
 
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertUser(user : User)

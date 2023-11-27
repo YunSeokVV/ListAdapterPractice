@@ -8,29 +8,28 @@ import androidx.activity.viewModels
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.Observer
+import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.listadapterpractice.R
 import com.example.listadapterpractice.adapter.UserAdapter
-import com.example.listadapterpractice.dataSource.GetUserDataSourceImpl
-import com.example.listadapterpractice.dataSource.InsertUserDataSourceImpl
-import com.example.listadapterpractice.dataSource.UpdateUserDataSourceImpl
+import com.example.listadapterpractice.dataSource.UserDataSourceImpl
 import com.example.listadapterpractice.database.UserDatabase
 import com.example.listadapterpractice.model.User
-import com.example.listadapterpractice.repository.GetUserRepositoryImpl
-import com.example.listadapterpractice.repository.InsertUserRepositoryImpl
-import com.example.listadapterpractice.repository.UpdateUserRepositoryImpl
+import com.example.listadapterpractice.repository.UserRepositoryImpl
 import com.example.listadapterpractice.viewModel.MyViewModel
 import com.orhanobut.logger.AndroidLogAdapter
 import com.orhanobut.logger.Logger
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.launch
 
 
 class MainActivity : AppCompatActivity() {
     private val adapter: UserAdapter by lazy {
         UserAdapter(object : UserAdapter.ItemClickListener {
-            override fun itemClick(user: User, position: Int) {
+            override fun itemClick(user: User) {
 
                 val dialogView = layoutInflater.inflate(R.layout.dialog_sample, null)
                 val alertDialog = AlertDialog.Builder(this@MainActivity)
@@ -39,34 +38,34 @@ class MainActivity : AppCompatActivity() {
 
                 val userName = dialogView.findViewById<EditText>(R.id.userName)
                 userName.hint = user.name
+
                 val editBtn = dialogView.findViewById<Button>(R.id.editBtn)
-                editBtn.setOnClickListener{
-                    viewModel.updateUser(userName.text.toString(), user)
-                    viewModel.clickedPosition = position
+                editBtn.setOnClickListener {
+                    viewModel.updateUser(user)
+                    //viewModel.clickedPosition = position
                     alertDialog.dismiss()
                 }
                 alertDialog.show()
             }
-        })
+        },
+            object : UserAdapter.SearchBtnListener {
+                override fun itemSearch(userName: String) {
+                    lifecycleScope.launch {
+                        adapter.submitList(viewModel.getUser(userName))
+                    }
+                }
+            })
     }
 
     private val viewModel: MyViewModel by viewModels {
         viewModelFactory {
             initializer {
                 MyViewModel(
-                    InsertUserRepositoryImpl(
-                        InsertUserDataSourceImpl(
-                            UserDatabase.getInstance(applicationContext).userDao()
-                        )
-                    ),
-                    GetUserRepositoryImpl(
-                        GetUserDataSourceImpl(
-                            UserDatabase.getInstance(applicationContext).userDao()
-                        )
-                    ),
-                    UpdateUserRepositoryImpl(
-                        UpdateUserDataSourceImpl(
-                            UserDatabase.getInstance(applicationContext).userDao()
+                    UserRepositoryImpl(
+                        UserDataSourceImpl(
+                            UserDatabase.getInstance(
+                                applicationContext
+                            ).userDao()
                         )
                     )
                 )
@@ -97,7 +96,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         viewModel.usersList.observe(this, Observer<List<User>> { data ->
-
+            Logger.v("viewModel observer Called")
             //해결법1
 //            val copied = data?.toMutableList()
 //            UserAdapter.afterItem = copied!!.get(0)
@@ -109,9 +108,15 @@ class MainActivity : AppCompatActivity() {
 //            adapter.currentList.clear()
 //            adapter.currentList.addAll(data)
 
-            adapter.submitList(data)
-            adapter.notifyItemChanged(viewModel.clickedPosition)
+
+            //adapter.notifyItemChanged(viewModel.clickedPosition)
+            adapter.submitList(viewModel.searchUserUI(data))
+
+            Logger.v(adapter.currentList.size.toString())
+
+            //adapter.submitList(data)
         })
+
 
     }
 }

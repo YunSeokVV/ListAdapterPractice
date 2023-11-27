@@ -1,20 +1,17 @@
 package com.example.listadapterpractice.viewModel
 
 import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.listadapterpractice.adapter.ViewType
 import com.example.listadapterpractice.model.User
-import com.example.listadapterpractice.repository.GetUserRepository
-import com.example.listadapterpractice.repository.InsertUserRepository
-import com.example.listadapterpractice.repository.UpdateUserRepository
+import com.example.listadapterpractice.repository.UserRepository
 import com.orhanobut.logger.Logger
+import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
 
 internal class MyViewModel(
-    private val insertUserRepository: InsertUserRepository,
-    private val getUserRepository: GetUserRepository,
-    private val updateUserRepository: UpdateUserRepository
+    private val userRepository: UserRepository
 ) : ViewModel() {
     private val _userList: LiveData<List<User>>
     val usersList: LiveData<List<User>>
@@ -22,31 +19,38 @@ internal class MyViewModel(
             return _userList
         }
 
+    fun searchUserUI(userList: List<User>): List<User> {
+        val searchUser = User("searchWord", ViewType.SEARCH)
+        var totalList = mutableListOf<User>()
+        totalList.add(searchUser)
+        totalList.addAll(userList)
+
+        return totalList
+    }
+
     init {
-        _userList = getUserRepository.getUser()
+        _userList = userRepository.getAllUser()
     }
 
-    // todo : 이 방식이 제대로된 subMitList를 쓰는 방법인 것 같다.
-    fun update(pos: Int, user: User) {
-        val newList = mutableListOf<User>()
-        _userList.value?.let {
-            newList.addAll(it)
-        }
-        newList.set(pos, user)
-        //_userList.value = newList
+    //var clickedPosition: Int = 0
+
+    suspend fun getUser(userName: String): List<User> {
+        return viewModelScope.async {
+            Logger.v(userName.toString())
+            return@async userRepository.getUser(userName)
+        }.await()
     }
 
-    var clickedPosition : Int = 0
 
 
     fun insertUser(userName: String) = viewModelScope.launch {
-        val user = User(userName)
-        insertUserRepository.insertUser(user)
+        val user = User(userName, ViewType.SEARCH_RESULT)
+        userRepository.insertUser(user)
     }
 
-    fun updateUser(userName: String, user: User) = viewModelScope.launch {
-        user.name = userName
-        updateUserRepository.updateUser(user)
+    fun updateUser(user: User) = viewModelScope.launch {
+        //user.name = userName
+        userRepository.updateUser(user)
     }
 
 }

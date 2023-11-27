@@ -1,3 +1,6 @@
 <resources>
     <string name="app_name">ListAdapterPractice</string>
+    <string name="search_hint">input search key word plz</string>
+    <string name="insert_user">insert user</string>
+    <string name="input_user_hint">input user name for add data</string>
 </resources>

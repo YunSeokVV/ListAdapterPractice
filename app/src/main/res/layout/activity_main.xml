@@ -20,13 +20,14 @@
         android:id="@+id/userName"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:hint="userName"
+        android:hint="@string/input_user_hint"
         app:layout_constraintBottom_toTopOf="@+id/insertButton" />
 
     <Button
         android:id="@+id/insertButton"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:text="@string/insert_user"
         app:layout_constraintBottom_toBottomOf="parent" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

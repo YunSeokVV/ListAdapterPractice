@@ -1,58 +1,89 @@
 package com.example.listadapterpractice.adapter
 
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Button
+import android.widget.EditText
 import android.widget.TextView
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
+import androidx.recyclerview.widget.RecyclerView.ViewHolder
 import com.example.listadapterpractice.R
 import com.example.listadapterpractice.model.User
 import com.orhanobut.logger.Logger
 
-class UserAdapter(private val itemClickListener: ItemClickListener) :
-    ListAdapter<User, UserAdapter.ViewHolder>(diffUtil) {
 
-    //todo : 예제 프로젝트에서는 아래와 같은 코드가 있었습니다. 근데 제가 공부했기로는 어댑터에서 listData 를 안쓰려는 이유도 DiffUtil을 쓰는 이유중 하나인 것으로 이해했는데 이게 맞는지 모르겠네요.
-    private val userData = mutableListOf<User>()
-
-    interface ItemClickListener{
-        fun itemClick(user : User, position : Int)
+class UserAdapter(
+    private val itemClickListener: ItemClickListener,
+    private val searchBtnListener: SearchBtnListener
+) :
+    ListAdapter<User, RecyclerView.ViewHolder>(diffUtil) {
+    override fun getItemViewType(position: Int): Int {
+        return currentList.get(position).viewType
     }
 
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
-        LayoutInflater.from(parent.context)
-        val itemView =
-            LayoutInflater.from(parent.context).inflate(R.layout.user_itme_list, parent, false)
-        return ViewHolder(itemView)
-    }
-
-    override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-        Logger.v("onBindViewHolder called")
-        // ListAdaptr 가 없었으면 썼을 코드
-        //holder.bind(userData[position])
-
-        holder.bind(getItem(position))
-    }
-
-//    fun setData(petArrayList: List<User>) {
-//        val petDiffUtilCallback = UserDiffCallback(userData, petArrayList)
-//        val diffResult = DiffUtil.calculateDiff(petDiffUtilCallback)
-//        dataSet.clear()
-//        dataSet.addAll(petArrayList)
-//        diffResult.dispatchUpdatesTo(this)
+    //todo : 반드시 이 메소드를 오버라이드 해야하는지 확인해보기
+//    override fun getItemCount(): Int {
+//        return super.getItemCount()
 //    }
 
-    inner class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
+    interface SearchBtnListener {
+        fun itemSearch(userName: String)
+    }
+
+    interface ItemClickListener {
+        fun itemClick(user: User)
+    }
+
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
+        LayoutInflater.from(parent.context)
+
+        if (viewType == ViewType.SEARCH) {
+            val itemView =
+                LayoutInflater.from(parent.context).inflate(R.layout.search_user, parent, false)
+            return SearchViewHolder(itemView)
+        } else {
+            val itemView =
+                LayoutInflater.from(parent.context).inflate(R.layout.user_itme_list, parent, false)
+            return SearchResultViewHolder(itemView)
+        }
+    }
+
+    override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
+        if (holder is SearchViewHolder) {
+            holder.bind()
+
+        } else if (holder is SearchResultViewHolder) {
+            holder.bind(getItem(position))
+        }
+    }
+
+
+    inner class SearchViewHolder(view: View) : RecyclerView.ViewHolder(view) {
+        val searchKeyWord: EditText = itemView.findViewById(R.id.searchKeyWord)
+        val searchBtn: Button = itemView.findViewById(R.id.searchButton)
+
+
+        fun bind() {
+            searchBtn.setOnClickListener {
+                searchBtnListener.itemSearch(searchKeyWord.text.toString())
+            }
+        }
+
+    }
+
+    inner class SearchResultViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         val userName: TextView = itemView.findViewById(R.id.userName)
         fun bind(user: User) {
             userName.text = user.name
         }
 
-        init{
-            itemView.setOnClickListener{
-                itemClickListener.itemClick(getItem(adapterPosition), adapterPosition)
+        init {
+            itemView.setOnClickListener {
+                itemClickListener.itemClick(getItem(adapterPosition))
             }
         }
     }
