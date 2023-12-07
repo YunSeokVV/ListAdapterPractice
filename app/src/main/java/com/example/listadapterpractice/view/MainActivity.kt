@@ -8,65 +8,76 @@ import androidx.activity.viewModels
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.Observer
+import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.listadapterpractice.R
 import com.example.listadapterpractice.adapter.UserAdapter
-import com.example.listadapterpractice.dataSource.GetUserDataSourceImpl
-import com.example.listadapterpractice.dataSource.InsertUserDataSourceImpl
-import com.example.listadapterpractice.dataSource.UpdateUserDataSourceImpl
+import com.example.listadapterpractice.dataSource.UserDataSourceImpl
 import com.example.listadapterpractice.database.UserDatabase
 import com.example.listadapterpractice.model.User
-import com.example.listadapterpractice.repository.GetUserRepositoryImpl
-import com.example.listadapterpractice.repository.InsertUserRepositoryImpl
-import com.example.listadapterpractice.repository.UpdateUserRepositoryImpl
+import com.example.listadapterpractice.model.ViewType
+import com.example.listadapterpractice.repository.UserRepositoryImpl
 import com.example.listadapterpractice.viewModel.MyViewModel
 import com.orhanobut.logger.AndroidLogAdapter
 import com.orhanobut.logger.Logger
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.launch
 
 
 class MainActivity : AppCompatActivity() {
     private val adapter: UserAdapter by lazy {
-        UserAdapter(object : UserAdapter.ItemClickListener {
-            override fun itemClick(user: User, position: Int) {
+        UserAdapter(
+            object : UserAdapter.ItemClickListener {
+                override fun itemClick(viewType: ViewType) {
 
-                val dialogView = layoutInflater.inflate(R.layout.dialog_sample, null)
-                val alertDialog = AlertDialog.Builder(this@MainActivity)
-                    .setView(dialogView)
-                    .create()
+                    val dialogView = layoutInflater.inflate(R.layout.dialog_sample, null)
+                    val alertDialog = AlertDialog.Builder(this@MainActivity)
+                        .setView(dialogView)
+                        .create()
 
-                val userName = dialogView.findViewById<EditText>(R.id.userName)
-                userName.hint = user.name
-                val editBtn = dialogView.findViewById<Button>(R.id.editBtn)
-                editBtn.setOnClickListener{
-                    viewModel.updateUser(userName.text.toString(), user)
-                    viewModel.clickedPosition = position
-                    alertDialog.dismiss()
+                    val userName = dialogView.findViewById<EditText>(R.id.userName)
+                    //userName.hint = user.name
+                    val editBtn = dialogView.findViewById<Button>(R.id.editBtn)
+
+                    editBtn.setOnClickListener {
+                        Logger.v(userName.text.toString())
+                        Logger.v(userName.hint.toString())
+
+                        // todo : 제대로 동작하지 않던 업데이트 기능이(submitList를 해줘도 안됐음) 지금은 된다. 아마 짐작하건데 아래 코드를 통해서 깊은 복사가 된 것 같은데 멘토님께 질문해보자.
+                        //val updateUser = User(userName.text.toString(),user.viewType, user.idx)
+                        val updateUser = User(userName.text.toString(), 0)
+                        viewModel.updateUser(updateUser)
+                        alertDialog.dismiss()
+                    }
+                    alertDialog.show()
                 }
-                alertDialog.show()
-            }
-        })
+            },
+            object : UserAdapter.SearchBtnListener {
+                override fun itemSearch(userName: String) {
+                    lifecycleScope.launch {
+                        viewModel.searchUser(userName)
+                        //adapter.submitList(viewModel.getUser(userName))
+                    }
+                }
+            },
+
+            )
     }
 
     private val viewModel: MyViewModel by viewModels {
         viewModelFactory {
             initializer {
                 MyViewModel(
-                    InsertUserRepositoryImpl(
-                        InsertUserDataSourceImpl(
-                            UserDatabase.getInstance(applicationContext).userDao()
-                        )
-                    ),
-                    GetUserRepositoryImpl(
-                        GetUserDataSourceImpl(
-                            UserDatabase.getInstance(applicationContext).userDao()
-                        )
-                    ),
-                    UpdateUserRepositoryImpl(
-                        UpdateUserDataSourceImpl(
-                            UserDatabase.getInstance(applicationContext).userDao()
+                    UserRepositoryImpl(
+                        UserDataSourceImpl(
+                            UserDatabase.getInstance(
+                                applicationContext
+                            ).userDao()
                         )
                     )
                 )
@@ -96,22 +107,16 @@ class MainActivity : AppCompatActivity() {
             )
         }
 
-        viewModel.usersList.observe(this, Observer<List<User>> { data ->
 
-            //해결법1
-//            val copied = data?.toMutableList()
-//            UserAdapter.afterItem = copied!!.get(0)
-//            Logger.v("check this "+(data === copied).toString())
-//            //todo : 핵심은 깊은복사를 해야한다는 점이다. 현재는 얕은복사이기 때문에 안된다. 여기서 값을 잘 넘겨줘야지 areContentsTheSame에서 false가 반환될 것이다.
-//            adapter.submitList(copied)
-
-            //해결법2 (나쁜 방법)
-//            adapter.currentList.clear()
-//            adapter.currentList.addAll(data)
-
+        viewModel.userList.observe(this, Observer<List<ViewType>> { data ->
+            Logger.v("Observed")
             adapter.submitList(data)
-            adapter.notifyItemChanged(viewModel.clickedPosition)
         })
 
+
+        lifecycleScope.launch {
+            val getAllUser: List<User> = viewModel.getAllUser().await()
+            adapter.submitList(viewModel.searchUserUI(getAllUser))
+        }
     }
 }
