@@ -3,9 +3,10 @@ package com.example.listadapterpractice.repository
 import androidx.lifecycle.LiveData
 import com.example.listadapterpractice.dataSource.UserDataSource
 import com.example.listadapterpractice.model.User
+import com.orhanobut.logger.Logger
 
 interface UserRepository {
-    fun getAllUser(): LiveData<List<User>>
+    suspend fun getAllUser(): List<User>
 
     suspend fun getUser(userName : String): List<User>
 
@@ -14,7 +15,8 @@ interface UserRepository {
 }
 
 class UserRepositoryImpl(private val userDataSource: UserDataSource) : UserRepository {
-    override fun getAllUser(): LiveData<List<User>> {
+    override suspend fun getAllUser(): List<User> {
+        Logger.v("getAllUser called")
         return userDataSource.getAllUser()
     }
 

@@ -10,20 +10,52 @@ import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.example.listadapterpractice.R
+import com.example.listadapterpractice.model.Search
 import com.example.listadapterpractice.model.User
+import com.example.listadapterpractice.model.ViewType
 import com.orhanobut.logger.Logger
-
+import java.lang.IllegalStateException
 
 class UserAdapter(
     private val itemClickListener: ItemClickListener,
-    private val searchBtnListener: SearchBtnListener
+    private val searchBtnListener: SearchBtnListener,
 ) :
-    ListAdapter<User, RecyclerView.ViewHolder>(diffUtil) {
+    ListAdapter<ViewType, RecyclerView.ViewHolder>(diffUtil) {
+
+    companion object {
+        private const val SEARCH_TYPE = 0
+        private const val USER_TYPE = 1
+        private val diffUtil = object : DiffUtil.ItemCallback<ViewType>() {
+
+            override fun areItemsTheSame(oldItem: ViewType, newItem: ViewType): Boolean {
+
+                val oldUser = (oldItem as? User)?: return true
+                val newUser = (newItem as? User)?: return true
+
+                // User properties may have changed if reloaded from the DB, but ID is fixed.
+                //추가적으로 좀 검색을해서 찾아보니까 여기서 말하는 getId() 가 DB에서 식별이 가능한 PK 값 같은 것을 의미한다고 한다.
+                // return oldItem.getId() == newItem.getId()
+                //Logger.v("areItemTheSame : ${oldItem.name == newItem.name}")
+                return oldUser.name == newUser.name
+            }
+
+            //todo : 애초에 oldItem 이랑 newItem 객체가 같은 시점부터 답이 없다. 뭔짓을 해도 true를 반환할거 아닌가.
+            override fun areContentsTheSame(oldItem: ViewType, newItem: ViewType): Boolean {
+
+                return oldItem == newItem
+            }
+
+
+        }
+    }
+
     override fun getItemViewType(position: Int): Int {
-        if (currentList.get(position).viewType == ViewType.SEARCH) {
-            return ViewType.SEARCH
-        } else {
-            return ViewType.SEARCH_RESULT
+
+        val data = getItem(position)
+        return when(data){
+            is Search -> SEARCH_TYPE
+            is User -> USER_TYPE
+            else -> throw IllegalStateException()
         }
     }
 
@@ -37,29 +69,43 @@ class UserAdapter(
     }
 
     interface ItemClickListener {
-        fun itemClick(user: User)
+        fun itemClick(viewType: ViewType)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
         LayoutInflater.from(parent.context)
-        if (viewType == ViewType.SEARCH) {
-            val itemView =
-                LayoutInflater.from(parent.context).inflate(R.layout.search_user, parent, false)
-            return SearchViewHolder(itemView)
-        } else {
-            val itemView =
-                LayoutInflater.from(parent.context).inflate(R.layout.user_itme_list, parent, false)
-            return SearchResultViewHolder(itemView)
+        return when(viewType){
+            SEARCH_TYPE -> SearchViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.search_user, parent, false))
+            USER_TYPE -> SearchResultViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.user_itme_list, parent, false))
+            else -> throw IllegalStateException()
         }
+
+//        if (viewType == ViewTypeInteger.SEARCH) {
+//            val itemView =
+//                LayoutInflater.from(parent.context).inflate(R.layout.search_user, parent, false)
+//            return SearchViewHolder(itemView)
+//        } else {
+//            val itemView =
+//                LayoutInflater.from(parent.context).inflate(R.layout.user_itme_list, parent, false)
+//            return SearchResultViewHolder(itemView)
+//        }
     }
 
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
-        if (holder is SearchViewHolder) {
-            holder.bind()
 
-        } else if (holder is SearchResultViewHolder) {
-            holder.bind(getItem(position))
+        when(holder){
+            is SearchViewHolder -> holder.bind()
+            is SearchResultViewHolder -> holder.bind(getItem(position))
+            else -> throw IllegalStateException()
         }
+
+//        //todo : when절로 바꾸기
+//        if (holder is SearchViewHolder) {
+//            holder.bind()
+//
+//        } else if (holder is SearchResultViewHolder) {
+//            holder.bind(getItem(position))
+//        }
     }
 
 
@@ -78,42 +124,17 @@ class UserAdapter(
 
     inner class SearchResultViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         val userName: TextView = itemView.findViewById(R.id.userName)
-        fun bind(user: User) {
-            userName.text = user.name
+
+        //fun bind(user: ViewType) {
+        fun bind(user: ViewType) {
+
+            userName.text = (user as User).name
         }
 
         init {
             itemView.setOnClickListener {
                 itemClickListener.itemClick(getItem(adapterPosition))
             }
-        }
-    }
-
-    companion object {
-        val diffUtil = object : DiffUtil.ItemCallback<User>() {
-
-            override fun areItemsTheSame(oldItem: User, newItem: User): Boolean {
-
-                // User properties may have changed if reloaded from the DB, but ID is fixed.
-                //추가적으로 좀 검색을해서 찾아보니까 여기서 말하는 getId() 가 DB에서 식별이 가능한 PK 값 같은 것을 의미한다고 한다.
-                // return oldItem.getId() == newItem.getId()
-                //Logger.v("areItemTheSame : ${oldItem.name == newItem.name}")
-                return oldItem.name == newItem.name
-            }
-
-            //todo : 애초에 oldItem 이랑 newItem 객체가 같은 시점부터 답이 없다. 뭔짓을 해도 true를 반환할거 아닌가.
-            override fun areContentsTheSame(oldItem: User, newItem: User): Boolean {
-
-                // 아래 로그가 서로 같은 시점부터 걍 망한거다.
-//                Logger.v(oldItem.hashCode().toString())
-//                Logger.v(newItem.hashCode().toString())
-
-                // NOTE: if you use equals, your object must properly override Object#equals()
-                // Incorrectly returning false here will result in too many animations.
-                // 동등성 비교를 해야한다. 객체안의 서로 내용이 같은지를 비교해야함.
-                return oldItem == newItem
-            }
-
         }
     }
 

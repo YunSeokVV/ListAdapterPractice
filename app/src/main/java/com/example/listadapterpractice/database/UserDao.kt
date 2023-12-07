@@ -12,7 +12,7 @@ import com.example.listadapterpractice.model.User
 @Dao
 interface UserDao {
     @Query("SELECT * FROM User")
-    fun getAllUser(): LiveData<List<User>>
+    suspend fun getAllUser(): List<User>
     @Query("SELECT * FROM User WHERE name == :name")
     suspend fun getUser(name : String): List<User>
 

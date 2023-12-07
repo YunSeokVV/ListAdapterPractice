@@ -7,7 +7,7 @@ import com.example.listadapterpractice.model.User
 
 interface UserDataSource {
     suspend fun getUser(userName : String) : List<User>
-    fun getAllUser() : LiveData<List<User>>
+    suspend fun getAllUser() : List<User>
     suspend fun insertUser(user : User)
 
     suspend fun updateUser(user : User)
@@ -17,7 +17,7 @@ class UserDataSourceImpl(private val userDao : UserDao) : UserDataSource{
         return userDao.getUser(userName)
     }
 
-    override fun getAllUser(): LiveData<List<User>> {
+    override suspend fun getAllUser(): List<User> {
         return userDao.getAllUser()
     }
 

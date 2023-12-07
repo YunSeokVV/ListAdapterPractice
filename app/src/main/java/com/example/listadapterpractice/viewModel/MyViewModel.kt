@@ -1,50 +1,78 @@
 package com.example.listadapterpractice.viewModel
 
+
 import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.viewModelScope
 import com.example.listadapterpractice.adapter.UserAdapter
-import com.example.listadapterpractice.adapter.ViewType
+import com.example.listadapterpractice.model.Search
+import com.example.listadapterpractice.model.ViewType
 import com.example.listadapterpractice.model.User
 import com.example.listadapterpractice.repository.UserRepository
 import com.orhanobut.logger.Logger
+import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
 
 internal class MyViewModel(
     private val userRepository: UserRepository
 ) : ViewModel() {
-    private val _userList: LiveData<List<User>>
-    val usersList: LiveData<List<User>>
+
+
+    private val _userList: MutableLiveData<List<User>> by lazy {
+        MutableLiveData<List<User>>()
+    }
+
+    val userList: LiveData<List<User>>
         get() {
             return _userList
         }
 
-    fun searchUserUI(userList: List<User>): List<User> {
-        val searchUser = User("searchWord", ViewType.SEARCH, 0)
-        val totalList = mutableListOf<User>()
-        totalList.add(searchUser)
-        totalList.addAll(userList)
 
-        return totalList
-    }
-
-    init {
-        _userList = userRepository.getAllUser()
-    }
-
-    //todo:비즈니스 로직 처리를 위해서 메소드의 매개변수로 어댑터를 넣었습니다. 그런데 뷰모델에서 어댑터를 쓰는게 좋은 방법인지는 잘 모르겠네요.
-    // 생성자를 이용한 의존성 주입으로 처리하는게 더 나은 방법인지 멘토님의 의견이 궁금합니다.
-    fun setSearchUser(adapter: UserAdapter, userName: String) {
-        viewModelScope.launch {
-            adapter.submitList(userRepository.getUser(userName))
+    fun getAllUser(): Deferred<List<User>> {
+        return viewModelScope.async {
+            userRepository.getAllUser()
         }
     }
 
+    fun searchUserUI(listUser: List<ViewType>): List<ViewType> {
+        val searchUser = Search()
+
+        var allHolder = mutableListOf<ViewType>()
+        allHolder.add(searchUser)
+        allHolder.addAll(listUser)
+        Logger.v(allHolder.toString())
+        return allHolder
+    }
+
+    init {
+        viewModelScope.launch {
+            _userList.value = userRepository.getAllUser()
+        }
+
+    }
+
+    fun searchUser(userName: String) {
+        viewModelScope.launch {
+            _userList.value = userRepository.getUser(userName)
+            Logger.v(_userList.value.toString())
+        }
+    }
+
+    //todo :  이 메소드를 멘토님이 수업중에 왜 설명해주셨는지 정확히 기억하는가?
+    fun test(adapter: UserAdapter) {
+        val list = listOf<ViewType>(
+            Search(), User("jys", 0), User("jys2", 0)
+        )
+        adapter.submitList(list)
+
+    }
 
     fun insertUser(userName: String) = viewModelScope.launch {
-        val user = User(userName, ViewType.SEARCH_RESULT, 0)
+        //al user = User(userName, ViewTypeInteger.SEARCH_RESULT, 0)
+        val user = User(userName, 0)
+
         userRepository.insertUser(user)
     }
 
@@ -53,5 +81,6 @@ internal class MyViewModel(
         Logger.v(user.toString())
         userRepository.updateUser(user)
     }
+
 
 }
