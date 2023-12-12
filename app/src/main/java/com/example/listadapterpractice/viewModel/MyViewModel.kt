@@ -20,21 +20,21 @@ internal class MyViewModel(
 ) : ViewModel() {
 
 
-    private val _userList: MutableLiveData<List<User>> by lazy {
-        MutableLiveData<List<User>>()
+    private val _userList: MutableLiveData<List<ViewType>> by lazy {
+        MutableLiveData<List<ViewType>>()
     }
 
-    val userList: LiveData<List<User>>
+    val userList: LiveData<List<ViewType>>
         get() {
             return _userList
         }
 
-
-    fun getAllUser(): Deferred<List<User>> {
-        return viewModelScope.async {
-            userRepository.getAllUser()
+    fun getAllUser() {
+        viewModelScope.launch {
+            _userList.value = searchUserUI(userRepository.getAllUser())
         }
     }
+
 
     fun searchUserUI(listUser: List<ViewType>): List<ViewType> {
         val searchUser = Search()
@@ -48,7 +48,8 @@ internal class MyViewModel(
 
     init {
         viewModelScope.launch {
-            _userList.value = userRepository.getAllUser()
+            getAllUser()
+            Logger.v(_userList.value.toString())
         }
 
     }
@@ -56,7 +57,6 @@ internal class MyViewModel(
     fun searchUser(userName: String) {
         viewModelScope.launch {
             _userList.value = userRepository.getUser(userName)
-            Logger.v(_userList.value.toString())
         }
     }
 
@@ -74,12 +74,13 @@ internal class MyViewModel(
         val user = User(userName, 0)
 
         userRepository.insertUser(user)
+        getAllUser()
     }
 
-    fun updateUser(user: User) = viewModelScope.launch {
-        //user.name = userName
-        Logger.v(user.toString())
+    fun updateUser(updatedName : String, user: User) = viewModelScope.launch {
+        val user = User(updatedName, user.idx)
         userRepository.updateUser(user)
+        getAllUser()
     }
 
 

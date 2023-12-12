@@ -34,24 +34,16 @@ class MainActivity : AppCompatActivity() {
         UserAdapter(
             object : UserAdapter.ItemClickListener {
                 override fun itemClick(viewType: ViewType) {
-
                     val dialogView = layoutInflater.inflate(R.layout.dialog_sample, null)
                     val alertDialog = AlertDialog.Builder(this@MainActivity)
                         .setView(dialogView)
                         .create()
 
                     val userName = dialogView.findViewById<EditText>(R.id.userName)
-                    //userName.hint = user.name
                     val editBtn = dialogView.findViewById<Button>(R.id.editBtn)
 
                     editBtn.setOnClickListener {
-                        Logger.v(userName.text.toString())
-                        Logger.v(userName.hint.toString())
-
-                        // todo : 제대로 동작하지 않던 업데이트 기능이(submitList를 해줘도 안됐음) 지금은 된다. 아마 짐작하건데 아래 코드를 통해서 깊은 복사가 된 것 같은데 멘토님께 질문해보자.
-                        //val updateUser = User(userName.text.toString(),user.viewType, user.idx)
-                        val updateUser = User(userName.text.toString(), 0)
-                        viewModel.updateUser(updateUser)
+                        viewModel.updateUser(userName.text.toString(), viewType as User)
                         alertDialog.dismiss()
                     }
                     alertDialog.show()
@@ -109,14 +101,8 @@ class MainActivity : AppCompatActivity() {
 
 
         viewModel.userList.observe(this, Observer<List<ViewType>> { data ->
-            Logger.v("Observed")
             adapter.submitList(data)
         })
 
-
-        lifecycleScope.launch {
-            val getAllUser: List<User> = viewModel.getAllUser().await()
-            adapter.submitList(viewModel.searchUserUI(getAllUser))
-        }
     }
 }
