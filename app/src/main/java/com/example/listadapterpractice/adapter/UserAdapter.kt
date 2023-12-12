@@ -128,7 +128,9 @@ class UserAdapter(
         //fun bind(user: ViewType) {
         fun bind(user: ViewType) {
 
-            userName.text = (user as User).name
+            val user = user as User
+            userName.text = user.name
+
         }
 
         init {
